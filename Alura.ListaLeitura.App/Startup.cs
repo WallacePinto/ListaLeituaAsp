@@ -27,7 +27,6 @@ namespace Alura.ListaLeitura.App
             builder.MapRoute("Livros/ParaLer", LivrosParaLer);
             builder.MapRoute("Livros/Lendo", LivrosLendo);
             builder.MapRoute("Livros/Lidos", LivrosLidos);
-            builder.MapRoute("Cadastro/NovoLivro/{nome}/{autor}", NovoLivroParaLer);
             builder.MapRoute("Livros/Detalhes/{id:int}", ExibeDetalhes);
             builder.MapRoute("Cadastro/NovoLivro", ExibeFormulario);
             builder.MapRoute("Cadastro/Incluir", ProcessaFormulario);
@@ -50,14 +49,14 @@ namespace Alura.ListaLeitura.App
             return context.Response.WriteAsync("O Livro foi adicionado com sucesso");
         }
 
-        private Task ExibeFormulario(HttpContext context)
+        public Task ExibeFormulario(HttpContext context)
         {
             var html = CarregaArquivoHTML("formulario");
                             
             return context.Response.WriteAsync(html);
         }
 
-        private string CarregaArquivoHTML(string nomeArquivo)
+        public string CarregaArquivoHTML(string nomeArquivo)
         {
             var nomeCompletoArquivo = $"HTML/{nomeArquivo}.html";
             using (var arquivo = File.OpenText(nomeCompletoArquivo))
@@ -97,9 +96,18 @@ namespace Alura.ListaLeitura.App
 
         public Task LivrosParaLer(HttpContext context)
         {
+            
             var _repo = new LivroRepositorioCSV();
+            var conteudoArquivo = CarregaArquivoHTML("para-ler");
 
-            return context.Response.WriteAsync(_repo.ParaLer.ToString());
+            foreach (var livro in _repo.ParaLer.Livros)
+            {
+                conteudoArquivo = conteudoArquivo
+                    .Replace("#NOVO-ITEM#", $"<li>{livro.Titulo} - {livro.Autor}</li>#NOVO-ITEM#");
+            };
+            conteudoArquivo = conteudoArquivo.Replace("#NOVO-ITEM#", "");
+
+            return context.Response.WriteAsync(conteudoArquivo);
 
         }
 
