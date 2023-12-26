@@ -2,6 +2,8 @@
 using Alura.ListaLeitura.App.Repositorio;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -11,9 +13,38 @@ namespace Alura.ListaLeitura.App
 {
     public class Startup
     {
+
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddRouting();
+        }
         public void Configure(IApplicationBuilder app)
         {
-            app.Run(Roteamento);
+            var builder = new RouteBuilder(app);
+
+            builder.MapRoute("Livros/ParaLer", LivrosParaLer);
+            builder.MapRoute("Livros/Lendo", LivrosLendo);
+            builder.MapRoute("Livros/Lidos", LivrosLidos);
+            builder.MapRoute("Cadastro/NovoLivro/{nome}/{autor}", NovoLivroParaLer);
+
+            var rotas = builder.Build();
+
+            app.UseRouter(rotas);
+            //app.Run(Roteamento);
+        }
+
+
+        public Task NovoLivroParaLer(HttpContext context)
+        {
+            var livro = new Livro()
+            {
+                Titulo = context.GetRouteValue("nome").ToString(),
+                Autor = context.GetRouteValue("autor").ToString(),
+            };
+            var repo = new LivroRepositorioCSV();
+            repo.Incluir(livro);
+            return context.Response.WriteAsync("O Livro foi adicionado com sucesso");
+
         }
 
         public Task Roteamento(HttpContext context)        
