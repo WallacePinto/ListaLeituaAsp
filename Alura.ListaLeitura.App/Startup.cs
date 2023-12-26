@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -28,11 +29,41 @@ namespace Alura.ListaLeitura.App
             builder.MapRoute("Livros/Lidos", LivrosLidos);
             builder.MapRoute("Cadastro/NovoLivro/{nome}/{autor}", NovoLivroParaLer);
             builder.MapRoute("Livros/Detalhes/{id:int}", ExibeDetalhes);
+            builder.MapRoute("Cadastro/NovoLivro", ExibeFormulario);
+            builder.MapRoute("Cadastro/Incluir", ProcessaFormulario);
 
             var rotas = builder.Build();
 
             app.UseRouter(rotas);
             //app.Run(Roteamento);
+        }
+
+        public Task ProcessaFormulario(HttpContext context)
+        {
+            var livro = new Livro()
+            {
+                Titulo = context.Request.Form["titulo"].First(),
+                Autor = context.Request.Form["autor"].First(),
+            };
+            var repo = new LivroRepositorioCSV();
+            repo.Incluir(livro);
+            return context.Response.WriteAsync("O Livro foi adicionado com sucesso");
+        }
+
+        private Task ExibeFormulario(HttpContext context)
+        {
+            var html = CarregaArquivoHTML("formulario");
+                            
+            return context.Response.WriteAsync(html);
+        }
+
+        private string CarregaArquivoHTML(string nomeArquivo)
+        {
+            var nomeCompletoArquivo = $"HTML/{nomeArquivo}.html";
+            using (var arquivo = File.OpenText(nomeCompletoArquivo))
+            {
+                return arquivo.ReadToEnd();
+            }
         }
 
         public Task ExibeDetalhes(HttpContext context)
@@ -41,19 +72,6 @@ namespace Alura.ListaLeitura.App
             var repo = new LivroRepositorioCSV();
             var livro = repo.Todos.First(l => l.Id == id);
             return context.Response.WriteAsync(livro.Detalhes());
-        }
-
-        public Task NovoLivroParaLer(HttpContext context)
-        {
-            var livro = new Livro()
-            {
-                Titulo = context.GetRouteValue("nome").ToString(),
-                Autor = context.GetRouteValue("autor").ToString(),
-            };
-            var repo = new LivroRepositorioCSV();
-            repo.Incluir(livro);
-            return context.Response.WriteAsync("O Livro foi adicionado com sucesso");
-
         }
 
         public Task Roteamento(HttpContext context)        
